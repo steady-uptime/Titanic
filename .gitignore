@@ -33,6 +33,8 @@ data/raw/*
 !data/external/.gitkeep
 !data/processed/.gitkeep
 !data/raw/.gitkeep
+!data/raw/titanic.csv
+
 
 # --- Runtime Logs ---
 # Soft Block: Ignore contents of logs, but keep the folder structure
