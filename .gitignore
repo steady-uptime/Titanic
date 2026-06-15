@@ -1,0 +1,66 @@
+# --- Virtual Environments ---
+.venv/
+env/
+venv/
+ENV/
+
+# --- Python Bytecode & Cache ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- OS & System Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Secrets & Environment Variables ---
+.env
+*.secret
+*.key
+
+# --- Data Assets ---
+data/*
+# But NOT these subfolders
+!data/external/
+!data/processed/
+!data/raw/
+# And inside those, ignore everything again
+data/external/*
+data/processed/*
+data/raw/*
+# Except the .gitkeep files
+!data/external/.gitkeep
+!data/processed/.gitkeep
+!data/raw/.gitkeep
+
+# --- Runtime Logs ---
+# Soft Block: Ignore contents of logs, but keep the folder structure
+logs/*
+!logs/.gitkeep
+
+# --- Model Artifacts ---
+# Soft Block: Ignore contents of artifacts, but keep the folder structure
+models/artifacts/*
+!models/artifacts/.gitkeep
+# Also ignore common model extensions globally
+*.joblib
+*.pkl
+*.h5
+
+# --- Notebooks ---
+# Soft Block: Keep the notebooks folder structure, ignore the files
+notebooks/*
+!notebooks/.gitkeep
+
+# --- Testing ---
+# Keep the tests folder structure
+tests/*
+!tests/.gitkeep
+
+# --- IDE & Editor Specifics ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.history/
