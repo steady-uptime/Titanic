@@ -1,4 +1,7 @@
 ```markdown
+# Titanic ML Pipeline
+![Project Status](https://img.shields.io/badge/Status-In%20Progress-blueviolet?style=for-the-badge)
+
 # Production-Grade MLOps Pipeline: Titanic Dataset Refactoring
 
 This repository demonstrates a modular, production-ready MLOps architecture designed for scalability, portability, and maintainability. Unlike standard "research" notebooks, this project follows strict **Software Engineering** principles to ensure a seamless transition from model development to production deployment.
