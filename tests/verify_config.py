@@ -1,5 +1,5 @@
 import sys
-from src.config.config_loader import config
+from src.config.config_loaderv1 import config
 
 ### NOTE: This must be run in the project root folder as -> python -m scripts.verify_config
 

@@ -1,44 +1,52 @@
+```markdown
 # Production-Grade MLOps Pipeline: Titanic Dataset Refactoring
 
-This repository demonstrates a modular, production-ready MLOps architecture designed for scalability, portability, and maintainability. Unlike standard "research" notebooks, this project follows strict Software Engineering principles to ensure the transition from model development to production deployment is seamless.
+This repository demonstrates a modular, production-ready MLOps architecture designed for scalability, portability, and maintainability. Unlike standard "research" notebooks, this project follows strict **Software Engineering** principles to ensure a seamless transition from model development to production deployment.
 
 ## 🏗 Architecture Principles
-To ensure production readiness, this project adheres to the following engineering constraints:
-- **Config-Driven Architecture**: Zero hardcoding. All hyperparameters, file paths, and transformation rules are externalized in `configs/`.
-- **Decoupled Logic**: Separation of Concerns (SoC) between Data Engineering (ETL), Model Engineering (Training/Inference), and Orchestration (Workflow Management).
-- **Portability**: All paths are resolved dynamically via a Singleton Configuration Loader using `pathlib`, ensuring the project runs on any OS without modification.
-- **Artifact Immutability**: Data transformations produce new artifacts rather than modifying source data in place.
+
+To ensure production readiness, this project adheres to five core engineering constraints:
+
+1.  **Config-Driven Architecture**: Zero hardcoding. All hyperparameters, file paths, and transformation rules are externalized in `configs/`.
+2.  **Decoupled Logic (Separation of Concerns)**: Distinct separation between Data Engineering (ETL), Model Engineering (Training/Inference), and Orchestration (Workflow Management).
+3.  **Portability**: All paths are resolved dynamically via a **Singleton Configuration Loader** using `pathlib`, ensuring the project runs on any OS without modification.
+4.  **Contract Validation**: Implementation of **Schema Validation Gates** to ensure data integrity between the Preprocessing and Model layers.
+5.  **Observability**: Centralized logging using `loguru` to provide structured, leveled, and persistent telemetry across all system components.
 
 ## 🚀 Project Status
+
 - [x] **Phase 1: Configuration Engine** (Singleton Config Loader, Profile Support)
 - [x] **Phase 2: Data Engineering Pipeline** (Worker-based ETL, Dynamic Preprocessing)
-- [x] **Phase 3: Model Engineering** (Trainable Workers, Artifact Management) - *In Progress*
-- [ ] **Phase 4: Evaluation & Orchestration** (Metrics, Logging, Scheduling)
+- [x] **Phase 3: Model Engineering** (Trainable Workers, Artifact Management)
+- [ ] **Phase 4: Evaluation & Persistence** (Metrics, Logging, Scheduling)
 - [ ] **Phase 5: Deployment** (Docker, Kubernetes, API)
 
-## 🚀 Key Achievements
-- Singleton Pattern for Configuration Management.
-- Abstract Base Classes (ABC) for Model Contract Definition.
-- Dependency Injection for Preprocessing Rules.
-- Contract Validation for Data Integrity.
+## 🚀 Key Engineering Achievements
+
+- **Singleton Pattern**: Used for Configuration Management to provide a **Single Source of Truth** and prevent redundant I/O operations.
+- **Abstract Base Classes (ABC)**: Defines a strict contract for all Model Workers, ensuring interchangeability of different ML algorithms.
+- **Dependency Injection**: Preprocessing rules and configurations are injected into workers, decoupling the "How" from the "What."
+- **Contract Validation**: A dedicated validation layer ensures the data "contract" is honored before data is handed off to the model worker, preventing silent failures.
+- **Feature Engineering Decoupling**: Isolated the representation logic (feature extraction/encoding) from the sanitization logic (cleaning/imputation).
 
 ## 🛠 Component Breakdown
 
 ### 1. Configuration Management (`configs/`)
-- **Singleton Pattern**: The `src/config/config_loader.py` ensures that the configuration is loaded into memory once. This provides a **Single Source of Truth** and prevents redundant I/O operations across the application.
-- **Profile Support**: Support for `development`, `staging`, and `production` profiles within `config.yaml`.
+- **Single Source of Truth**: All variables (Data, Model, Pipeline) live in `config.yaml`.
+- **Dynamic Resolution**: The `src/config/config_loader.py` calculates the project root dynamically, eliminating the risks associated with absolute paths.
 
-### 2. Data Engineering (`src/data/`)
+### 2. Data Engineering (`src/data_processing/`)
 - **Worker Pattern**: Data loading and preprocessing are abstracted into dedicated worker classes.
-- **Dynamic Preprocessing**: The pipeline handles dropping, imputation, and encoding via configuration injection.
-- **Dependency Injection**: Preprocessing methods receive specific configuration slices, making the logic easily testable and modular.
+- **Feature Engineering**: Dedicated module for extracting features and encoding categorical variables.
+- **Validator Module**: Explicit schema validation checks for data types and column existence at every gate.
+- **Immutability**: Processes data into a dedicated `data/processed/` directory to preserve the integrity of `data/raw/`.
 
 ### 3. Model Engineering (`src/model/`)
-- **Abstract Base Classes (ABC)**: Defines a strict contract for all model workers (e.g., `.fit()`, `.predict()`).
-- **Persistence Layer**: Standardized serialization of model artifacts using `joblib`.
+- **Contract Definition**: Uses ABCs to ensure every model implementation supports a standardized `.train()` and `.save()` interface.
+- **Persistence**: Standardized serialization using `joblib` for model artifact management.
 
 ### 4. Orchestration (`scripts/`)
-- **Manager Pattern**: Orchestrator scripts manage the lifecycle of the data flow, acting as the "Manager" that delegates tasks to "Worker" modules.
+- **Manager Pattern**: `scripts/train.py` acts as the primary orchestrator, delegating tasks to the specific modules in `src/`. It manages the workflow topology without knowing the internal details of the workers.
 
 ## ⚙️ Development Setup
 
@@ -70,25 +78,22 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-```
 
 ### 3. Execution Pipeline
 
-The project uses an orchestrator pattern. Execute the stages sequentially:
+The project uses an orchestrator pattern. Execute the training lifecycle:
 
-##### **Data Engineering:** 
-`python scripts/run_preprocessing.py`
-
-##### **Model Training:** 
-_(Pending Phase 3 Completion)_ 
+##### **Training & Orchestration:**
 `python scripts/train.py`
 
 ## 🐳 Infrastructure
 
-- **Docker**: Containerized environment definition in `/docker`.
-- **Kubernetes**: Manifests for deployment orchestration in `/k8s`.
+- **Docker**: Containerized environment definition in `/docker`.
+- **Kubernetes**: Manifests for deployment orchestration in `/k8s`.
+- **Deployment Config**: Infrastructure-specific settings in `deployment.yaml`.
 
 ## 🧪 Testing & Quality Assurance
 
-- **Unit/Integration Tests**: `pytest tests/`
-- **Logging**: Centralized logging routed to the `logs/` directory with `loguru` support.
+- **Unit/Integration Tests**: `pytest tests/`
+- **Logging**: Centralized logging routed to the `logs/` directory with `loguru` support for structured, leveled telemetry.
+```

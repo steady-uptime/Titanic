@@ -1,75 +1,90 @@
-import logging
+# scripts/train.py
 from pathlib import Path
 from src.config.config_loader import ConfigLoader
 from src.data_processing.data_loader import DataLoader
 from src.data_processing.preprocessing import DataPreprocessor
+from src.data_processing.feature_engineering import FeatureEngineer
 from src.model.sklearn_worker import SklearnRandomForestWorker
-from src.utils.logger_setup import setup_logging
+from src.data_processing.validator import DataValidator
+from src.utils.logger import setup_logger 
+from loguru import logger
 
-setup_logging()
-logger = logging.getLogger(__name__)
+# Initialize Loguru via Config
+config = ConfigLoader.get_config()
+setup_logger(config["logging"])
 
 def main():
     config = ConfigLoader.get_config()
-    
-    # Logic for "Scripted" execution: 
-    # We might only want to run the model training part with a specific data slice.
-    # Here, we still use the slices to maintain consistency with the pipeline.
+    logger.info("Configuration loaded successfully.")
+
     data_cfg = config["data"]
-    model_cfg = config["model"]
     artifacts_cfg = config["artifacts"]
+    model_cfg = config["model"]
 
-    # We extract the specific sub-domain for preprocessing from the data_cfg object.
-    # This maintains the "Single Source of Truth" while keeping the Preprocessor
-    # decoupled from the overall configuration structure.
+    # Slicing sub-domains for specific workers
     pre_cfg = data_cfg["preprocessing"]
+    schema = data_cfg["schema"]
+    processed_schema = data_cfg["processed_schema"]
 
-    # --- Explicit Type Casting ---
-    # The config.yaml provides a string. The DataPreprocessor requires a Path object.
-    # We cast it here at the orchestration level to ensure the worker remains agnostic 
-    # of the configuration source.
-    processed_path_obj = Path(data_cfg['processed_path']) 
-
-    logger.info("Running manual training script...")
-
+    # --- Data Engineering Phase ---
+    logger.info("--- Starting Pipeline: Data Engineering Phase ---")
+        
+    # Load Raw Data
     loader = DataLoader(data_cfg)
     raw_data = loader.load_csv(artifacts_cfg["input_file"])
+    
+    #  Contract Validation (Raw)
+    validator_raw = DataValidator(schema)
+    validator_raw.validate(raw_data)
 
+    # Data Sanitization (Cleaning)
+    processed_path_obj = Path(data_cfg['processed_path']) 
     preprocessor = DataPreprocessor(
         rules=pre_cfg, 
         processed_path=processed_path_obj
     )
+    sanitized_data = preprocessor.clean_data(raw_data)
     
-    processed_data = preprocessor.clean_data(raw_data)
+    # Save intermediate artifact for auditability
     preprocessor.save_processed_data(
-        processed_data, 
+        sanitized_data, 
         filename=artifacts_cfg["output_file"]
     )
 
-    # Explicitly showing the "Scripting" flow: 
-    # You can easily add print statements or manual checks here for debugging.
-    target_col = data_cfg["target_column"]
-    X = processed_data.drop(target_col, axis=1)
-    y = processed_data[target_col]
+    engineer = FeatureEngineer(rules=pre_cfg, target_column=data_cfg["target_column"])
+    
+    # IMPORTANT: We transform the data. 
+    # If FeatureEngineer returns a DataFrame, we validate it immediately.
+    # If it returns X, y, we validate X.
+    X, y = engineer.transform(sanitized_data)
 
-    # CONTRACT VALIDATION: Ensure no strings remain in the features
-    # This prevents the 'ValueError: could not convert string to float'
-    # Extract the filtered columns to a local variable to avoid redundant computation
-    # This follows the principle of DRY (Don't Repeat Yourself)
-    obj_cols = X.select_dtypes(include=['object']).columns
+    # 5. Contract Validation (Final Gate)
+    # We replace the manual "select_dtypes" check with the Validator.
+    # This is the "Contract" for the Model Worker.
+    logger.info("--- Starting Contract Validation Phase - post-engineering ---")
+    validator_final = DataValidator(processed_schema)
+    
+    # We validate X (the features). 
+    # Note: If your processed_schema includes 'Survived', 
+    # you may need to pass the full dataframe to the validator 
+    # or adjust the schema to only include feature columns.
+    validator_final.validate(X) 
 
-    # Explicitly check if the resulting Index is non-empty
-    if not obj_cols.empty:
-        logger.error(f"Data Integrity Error: Non-numeric columns found: {obj_cols.tolist()}")
-        raise ValueError("Preprocessing failed to convert all categorical features to numeric.")
+    # --- STATE INSPECTION ---
+    # We use the logger to output the first 5 rows of our feature matrix.
+    # This confirms that 'Cabin' is gone and 'Cabin_Deck' is present.
+    logger.info(f"Final Feature Matrix (X) Head:\n{X.head()}")
 
+    # --- Model Engineering Phase ---
     logger.info("--- Starting Model Engineering Phase ---")
-
+    
     worker = SklearnRandomForestWorker(model_cfg)
     worker.train(X, y)
     worker.save()
 
-    logger.info("Manual training complete.")
+    logger.info(f"Final Feature Matrix Columns: {X.columns.tolist()}")
+
+    logger.info("Pipeline executed successfully.")
 
 if __name__ == "__main__":
     main()
