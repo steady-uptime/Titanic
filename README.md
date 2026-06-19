@@ -1,4 +1,3 @@
-```markdown
 # Titanic ML Pipeline
 ![Project Status](https://img.shields.io/badge/Status-In%20Progress-blueviolet?style=for-the-badge)
 
@@ -99,4 +98,3 @@ The project uses an orchestrator pattern. Execute the training lifecycle:
 
 - **Unit/Integration Tests**: `pytest tests/`
 - **Logging**: Centralized logging routed to the `logs/` directory with `loguru` support for structured, leveled telemetry.
-```
