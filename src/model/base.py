@@ -1,32 +1,35 @@
+# src/model/base.py
 from abc import ABC, abstractmethod
 import pandas as pd
-from pathlib import Path
-import logging
-
-logger = logging.getLogger(__name__)
+from typing import Any
+from loguru import logger
 
 class ModelWorker(ABC):
     """
     Abstract Base Class for all model workers.
-    Enforces a consistent interface across different ML models.
+    Enforces a consistent interface for Training and Inference.
     """
     def __init__(self, config: dict):
+        # This config is a slice (e.g., model_cfg)
         self.config = config
-        self.model = None
-        self.save_dir = None
+        self.model: Any = None
 
     @abstractmethod
     def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the model on the provided features and target."""
         pass
 
     @abstractmethod
-    def save(self) -> None:
-        """Persist the trained model to the directory defined in config."""
+    def predict(self, X: pd.DataFrame) -> pd.Series:
         pass
 
     @abstractmethod
-    def load(self) -> None:
-        """Load a persisted model from the directory defined in config."""
+    def save(self, persistence_engine: Any) -> None:
+        """
+        Dependency Injection: The worker receives the engine 
+        as a dependency during execution.
+        """
         pass
-    
+
+    @abstractmethod
+    def load(self, persistence_engine: Any) -> None:
+        pass
