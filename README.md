@@ -11,7 +11,7 @@ To ensure production readiness, this project adheres to five core engineering co
 1. **Config-Driven Architecture**: Zero hardcoding. All hyperparameters, file paths, and transformation rules are externalized in `configs/`.
 2. **Decoupled Logic (Separation of Concerns)**: Distinct separation between Data Engineering (ETL), Model Engineering (Training/Inference), and Orchestration (Workflow Management).
 3. **Portability**: All paths are resolved dynamically via a **Singleton Configuration Loader** using `pathlib`, ensuring the project runs on any OS without modification.
-4. **Contract Validation**: Implementation of **Schema Validation Gates** to ensure data integrity between the Preprocessing and Model layers.
+4. **Dynamic Contract Validation**: A dedicated validation layer enforces data integrity by validating the **runtime-generated schema** emitted by the Feature Engineering worker. This prevents silent failures and ensures the "Data Contract" is honored before the data is handed off to the Model Worker.
 5. **Observability**: Centralized logging using `loguru` to provide structured, leveled, and persistent telemetry across all system components.
 
 ## 🚀 Project Status
@@ -40,7 +40,7 @@ To ensure production readiness, this project adheres to five core engineering co
 ### 2. Data Engineering (`src/data_processing/`)
 - **Worker Pattern**: Data loading and preprocessing are abstracted into dedicated worker classes.
 - **Feature Engineering**: Isolated module for extracting features and encoding categorical variables.
-- **Validator Module**: Explicit schema validation checks for data types and column existence at every gate.
+- **Validator Module**: A generic, immutable utility that performs **Source Contract Validation** (verifying raw data integrity) and **Transformation Contract Validation** (verifying engineered features) at every gate in the pipeline.
 - **Immutability**: Processes data into a dedicated `data/processed/` directory to preserve the integrity of `data/raw/`.
 
 ### 3. Model Engineering (`src/model/`)
