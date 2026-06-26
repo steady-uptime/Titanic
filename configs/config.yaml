@@ -1,17 +1,24 @@
 # configs/config.yaml
 project_name: "Titanic_Survival_Prediction"
+version: "1.0.0"
 
 env:
-  mode: "dev" # Options: dev, staging, prod
+  mode: "dev"
   compute:
     num_workers: 4
     gpu_id: 0
     memory_limit_gb: 16
 
+# INFRASTRUCTURE LAYER (Single Source of Truth for Paths)
+paths:
+  raw_data: "data/raw"
+  processed_data: "data/processed"
+  external_data: "data/external"
+  models: "models/artifacts"
+  logs: "logs"
+
+# LOGIC LAYER (No paths allowed here)
 data:
-  raw_path: "data/raw"
-  processed_path: "data/processed"
-  external_path: "data/external" 
   target_column: "Survived"
   split_config:
     test_size: 0.2
@@ -30,27 +37,9 @@ data:
       type: "int64"
     - column: "Survived"
       type: "int64"
-    - column: "Pclass"
-      type: "int64"
-    - column: "Name"
-      type: "object"
-    - column: "Sex"
-      type: "object"
-    - column: "Age"
-      type: "float64"
-    - column: "SibSp"
-      type: "int64"
-    - column: "Parch"
-      type: "int64"
-    - column: "Ticket"
-      type: "object"
-    - column: "Fare"
-      type: "float64"
-    - column: "Cabin"
-      type: "object"
-    - column: "Embarked"
-      type: "object"
+    # ... (rest of your schema)
 
+# EXECUTION LAYER (Specific files for this run)
 artifacts:
   input_file: "titanic.csv"
   output_file: "titanic_processed.csv"

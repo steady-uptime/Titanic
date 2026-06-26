@@ -1,3 +1,5 @@
+# src/data_processing/data_loader.py
+from src.config.config_loader import PathsConfig
 import pandas as pd
 from pathlib import Path
 import logging
@@ -5,17 +7,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DataLoader:
-    def __init__(self, data_config: dict):
+    def __init__(self, paths_cfg: PathsConfig):
         """
         Worker: Fetches raw data.
-        Decoupled: Receives ONLY the data portion of the config.
+        Decoupled: Receives ONLY the paths portion of the config.
         """
-        # Law #2: Config-Driven Architecture
-        # We use the dictionary passed in from the Orchestrator.
-        # Note: We use the keys directly because config["data"] was already passed in.
-        self.raw_path = Path(data_config['raw_path'])
-        self.processed_path = Path(data_config['processed_path'])
-        self.external_path = Path(data_config['external_path'])
+        # Config-Driven Architecture
+        # Access the properties directly from the PathsConfig dataclass.
+        self.raw_path = Path(paths_cfg.raw_data)
+        self.processed_path = Path(paths_cfg.processed_data)
+        self.external_path = Path(paths_cfg.external_data)
         
         logger.info(f"Initialized DataLoader with raw_path: {self.raw_path}")
 

@@ -1,7 +1,9 @@
 # src/model/base.py
+from dataclasses import dataclass
+from typing import Any
+from src.config.config_loader import ModelConfig
 from abc import ABC, abstractmethod
 import pandas as pd
-from typing import Any
 from loguru import logger
 
 class ModelWorker(ABC):
@@ -9,7 +11,7 @@ class ModelWorker(ABC):
     Abstract Base Class for all model workers.
     Enforces a consistent interface for Training and Inference.
     """
-    def __init__(self, config: dict):
+    def __init__(self, config: ModelConfig):
         # This config is a slice (e.g., model_cfg)
         self.config = config
         self.model: Any = None
