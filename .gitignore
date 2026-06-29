@@ -56,8 +56,9 @@ notebooks/*
 !notebooks/.gitkeep
 
 # --- Testing ---
-# Keep the tests folder structure
+# Keep the tests folder structure and unit tests
 tests/*
+!tests/*.py
 !tests/.gitkeep
 
 # --- IDE & Editor Specifics ---

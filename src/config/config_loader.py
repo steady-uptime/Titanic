@@ -1,8 +1,9 @@
 # /src/config/config_loader.py
 import yaml
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from loguru import logger
 
 # --- Configuration Schema (The Contracts) ---
@@ -54,10 +55,6 @@ class LoggingConfig:
 
 @dataclass(frozen=True)
 class AppConfig:
-    """
-    The Root Configuration Object.
-    Every top-level key in config.yaml maps to a nested Dataclass.
-    """
     project_name: str
     env: EnvConfig
     data: DataConfig
@@ -101,6 +98,9 @@ class ConfigLoader:
             # Inject the project_root into the raw data for use in paths
             raw_data["project_root"] = str(cls.project_root)
 
+            # Apply environment variable overrides here
+            raw_data = cls._apply_env_overrides(raw_data)
+
             # Manual Mapping to Dataclasses
             # This ensures that our Config object matches our YAML structure exactly.
             cls._config = AppConfig(
@@ -115,10 +115,48 @@ class ConfigLoader:
                 project_root=raw_data["project_root"]
             )
             
-            logger.info("System: Configuration successfully mapped to Dataclasses.")
+            logger.info("System: Configuration successfully mapped to Dataclasses with Env Overrides applied.")
         except Exception as e:
             logger.error(f"System: Failed to map configuration: {e}")
             raise
+
+    @staticmethod
+    def _apply_env_overrides(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Implements Configuration Precedence.
+        Checks for specific Environment Variables to override YAML keys. This allows runtime
+        overrides including such things as dev, stage, prod environments; DATA_PATH locations;
+        database URLs, API endpoints, API secrets to keep them out of the code and flexible.
+        """
+        # Define the mapping: { ENV_VAR_NAME: ("YAML_SECTION", "YAML_KEY") }
+        # This is the "Source of Truth" for our external configuration interface.
+        env_mapping = {
+            "DATA_PATH": ("paths", "raw_data"),
+            "MODEL_PATH": ("paths", "models"),
+            "LOG_LEVEL": ("logging", "level"),
+            "BATCH_SIZE": ("training", "batch_size"),
+            "LEARNING_RATE": ("training", "learning_rate"),
+            "ENV_MODE": ("env", "mode")
+        }
+
+        for env_var, (section, key) in env_mapping.items():
+            env_value = os.getenv(env_var)
+            if env_value is not None:
+                # Type casting logic: Ensure EnvVars (always strings) match Dataclass types
+                target_type = type(raw_data[section][key])
+                
+                # Cast to float/int if necessary, otherwise keep as string
+                if target_type == bool:
+                    overridden_value = env_value.lower() in ("true", "1", "yes")
+                elif target_type in (int, float):
+                    overridden_value = target_type(env_value)
+                else:
+                    overridden_value = env_value
+                
+                raw_data[section][key] = overridden_value
+                logger.info(f"System: Overriding {section}.{key} with EnvVar {env_var}")
+
+        return raw_data
 
     @classmethod
     def get_config(cls) -> AppConfig:
@@ -128,5 +166,4 @@ class ConfigLoader:
         return cls._config
 
 # Global instance for the Software Stack.
-# This provides the Single Source of Truth.
 config = ConfigLoader().get_config()

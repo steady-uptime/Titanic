@@ -20,7 +20,8 @@ To ensure production readiness, this project adheres to five core engineering co
 - [x] **Phase 2: Data Engineering Pipeline** (Worker-based ETL, Dynamic Preprocessing)
 - [x] **Phase 3: Model Engineering** (Trainable Workers, Artifact Management)
 - [x] **Phase 4: Evaluation & Persistence** (Metrics, Logging, Metadata Serialization)
-- [ ] **Phase 5: Deployment** (Docker, Kubernetes, API)
+- [x] **Phase 5: Containerization & Testing** (Docker Environment Parity, Unit Testing)
+- [ ] **Phase 6: Orchestration** (Kubernetes Deployment, Scalable Inference)
 
 ## 🛠 Key Engineering Achievements
 
@@ -87,6 +88,8 @@ The project uses an orchestrator pattern. Execute the training lifecycle:
 ##### **Training & Orchestration:**
 `python scripts/train.py`
 
+##### **Unit Testing:**
+`pytest tests/`
 
 ## 🐳 Infrastructure
 
@@ -96,5 +99,5 @@ The project uses an orchestrator pattern. Execute the training lifecycle:
 
 ## 🧪 Testing & Quality Assurance
 
-- **Unit/Integration Tests**: `pytest tests/`
+- **Unit/Integration Tests**:  Automated test suite in `tests/` using `pytest`.
 - **Logging**: Centralized logging routed to the `logs/` directory with `loguru` support for structured, leveled telemetry.

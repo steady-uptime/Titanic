@@ -37,7 +37,26 @@ data:
       type: "int64"
     - column: "Survived"
       type: "int64"
-    # ... (rest of your schema)
+    - column: "Pclass"
+      type: "int64"
+    - column: "Name"
+      type: "object"
+    - column: "Sex"
+      type: "object"
+    - column: "Age"
+      type: "float64"
+    - column: "SibSp"
+      type: "int64"
+    - column: "Parch"
+      type: "int64"
+    - column: "Ticket"
+      type: "object"
+    - column: "Fare"
+      type: "float64"
+    - column: "Cabin"
+      type: "object"
+    - column: "Embarked"
+      type: "object"
 
 # EXECUTION LAYER (Specific files for this run)
 artifacts:
