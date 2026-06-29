@@ -1,0 +1,18 @@
+# docker/docker-compose.yaml
+services:
+  train_pipeline:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: titanic_train_pipeline
+    volumes:
+      # Map local directories to the container's /app directory
+      # This allows you to see logs/ and data/ updates in real-time
+      - ..:/app
+    environment:
+      - ENV_MODE=dev
+      - LOG_LEVEL=INFO
+      - APP_HOME=/app
+    # This ensures the container stays alive if needed, 
+    # though for a training script, it will exit upon completion.
+    restart: "no"
