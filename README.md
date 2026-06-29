@@ -86,7 +86,7 @@ pip install -r requirements.txt
 The project uses an orchestrator pattern. Execute the training lifecycle:
 
 ##### **Training & Orchestration:**
-`python scripts/train.py`
+`python -m scripts.train`
 
 ##### **Unit Testing:**
 `pytest tests/`

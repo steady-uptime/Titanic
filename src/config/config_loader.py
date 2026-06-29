@@ -13,6 +13,7 @@ class EnvConfig:
     mode: str
     compute: Dict[str, Any]
 
+
 @dataclass(frozen=True)
 class DataConfig:
     target_column: str
@@ -20,11 +21,18 @@ class DataConfig:
     preprocessing: Dict[str, Any]
     schema: list
 
+    def validate(self):
+        if not self.target_column:
+            raise ValueError("DataConfig: target_column must not be empty.")
+        # Add specific schema or split_config validation here as needed
+
+
 @dataclass(frozen=True)
 class ModelConfig:
     name: str
     type: str
     params: Dict[str, Any]
+
 
 @dataclass(frozen=True)
 class TrainingConfig:
@@ -32,6 +40,14 @@ class TrainingConfig:
     batch_size: int
     epochs: int
 
+    def validate(self):
+        if not (0 < self.learning_rate < 1):
+            raise ValueError(f"TrainingConfig: Invalid learning_rate ({self.learning_rate}). Must be between 0 and 1.")
+        if self.batch_size <= 0:
+            raise ValueError(f"TrainingConfig: Invalid batch_size ({self.batch_size}). Must be > 0.")
+        if self.epochs <= 0:
+            raise ValueError(f"TrainingConfig: Invalid epochs ({self.epochs}). Must be > 0.")
+        
 @dataclass(frozen=True)
 class PathsConfig:
     external_data: str
@@ -40,11 +56,13 @@ class PathsConfig:
     processed_data: str
     raw_data: str
 
+
 @dataclass(frozen=True)
 class ArtifactConfig:
     input_file: str
     output_file: str
     base_path: str
+
 
 @dataclass(frozen=True)
 class LoggingConfig:
@@ -52,6 +70,7 @@ class LoggingConfig:
     level: str
     rotation: str
     retention: str
+
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -65,6 +84,11 @@ class AppConfig:
     logging: LoggingConfig
     project_root: str
 
+    def validate(self):
+        """Aggregate validation for all sub-configs."""
+        self.data.validate()
+        self.training.validate()
+        # Add other validation calls here as the config expands
 
 # --- Singleton Loader ---
 
@@ -82,7 +106,10 @@ class ConfigLoader:
     @classmethod
     def _initialize_config(cls) -> None:
         # Law #1 & #3: Dynamically calculate project root for Portability.
-        cls.project_root = Path(__file__).resolve().parent.parent.parent
+        # Only calculate project_root if it hasn't been set by an external source (like a test patch)
+        if cls.project_root is None:
+            cls.project_root = Path(__file__).resolve().parent.parent.parent
+        
         config_path = cls.project_root / "configs" / "config.yaml"
         
         logger.info(f"System: Loading configuration from {config_path}")
@@ -98,11 +125,10 @@ class ConfigLoader:
             # Inject the project_root into the raw data for use in paths
             raw_data["project_root"] = str(cls.project_root)
 
-            # Apply environment variable overrides here
+            # Apply environment variable overrides based on YAML mapping
             raw_data = cls._apply_env_overrides(raw_data)
 
             # Manual Mapping to Dataclasses
-            # This ensures that our Config object matches our YAML structure exactly.
             cls._config = AppConfig(
                 project_name=raw_data["project_name"],
                 env=EnvConfig(**raw_data["env"]),
@@ -115,9 +141,12 @@ class ConfigLoader:
                 project_root=raw_data["project_root"]
             )
             
-            logger.info("System: Configuration successfully mapped to Dataclasses with Env Overrides applied.")
+            # Contract Validation Gate
+            cls._config.validate()
+            
+            logger.info("System: Configuration successfully loaded, mapped, and validated.")
         except Exception as e:
-            logger.error(f"System: Failed to map configuration: {e}")
+            logger.error(f"System: Configuration Initialization Failed: {e}")
             raise
 
     @staticmethod
@@ -127,36 +156,34 @@ class ConfigLoader:
         Checks for specific Environment Variables to override YAML keys. This allows runtime
         overrides including such things as dev, stage, prod environments; DATA_PATH locations;
         database URLs, API endpoints, API secrets to keep them out of the code and flexible.
+        The env mapping is dynamic, pulled directly from the config.yaml.
         """
-        # Define the mapping: { ENV_VAR_NAME: ("YAML_SECTION", "YAML_KEY") }
         # This is the "Source of Truth" for our external configuration interface.
-        env_mapping = {
-            "DATA_PATH": ("paths", "raw_data"),
-            "MODEL_PATH": ("paths", "models"),
-            "LOG_LEVEL": ("logging", "level"),
-            "BATCH_SIZE": ("training", "batch_size"),
-            "LEARNING_RATE": ("training", "learning_rate"),
-            "ENV_MODE": ("env", "mode")
-        }
+        # Retrieve the mapping from the YAML (e.g., {"DATA_PATH": ["paths", "raw_data"]})
+        env_mapping = raw_data.get("env_mapping", {})
 
-        for env_var, (section, key) in env_mapping.items():
+        for env_var, mapping_values in env_mapping.items():
             env_value = os.getenv(env_var)
             if env_value is not None:
-                # Type casting logic: Ensure EnvVars (always strings) match Dataclass types
-                target_type = type(raw_data[section][key])
+                # mapping_values is a list from YAML, e.g., ["paths", "raw_data"]
+                section, key = mapping_values 
                 
-                # Cast to float/int if necessary, otherwise keep as string
-                if target_type == bool:
-                    overridden_value = env_value.lower() in ("true", "1", "yes")
-                elif target_type in (int, float):
-                    overridden_value = target_type(env_value)
-                else:
-                    overridden_value = env_value
-                
-                raw_data[section][key] = overridden_value
-                logger.info(f"System: Overriding {section}.{key} with EnvVar {env_var}")
+                if section in raw_data and key in raw_data[section]:
+                    target_type = type(raw_data[section][key])
+                    
+                    # Type casting logic
+                    if target_type == bool:
+                        overridden_value = env_value.lower() in ("true", "1", "yes")
+                    elif target_type in (int, float):
+                        overridden_value = target_type(env_value)
+                    else:
+                        overridden_value = env_value
+                    
+                    raw_data[section][key] = overridden_value
+                    logger.info(f"System: Overriding {section}.{key} with EnvVar {env_var}")
 
         return raw_data
+
 
     @classmethod
     def get_config(cls) -> AppConfig:

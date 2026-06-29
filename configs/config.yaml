@@ -9,6 +9,15 @@ env:
     gpu_id: 0
     memory_limit_gb: 16
 
+# This is the Source of Truth for Environment Variable Overrides
+env_mapping:
+  DATA_PATH: ["paths", "raw_data"]
+  MODEL_PATH: ["paths", "models"]
+  LOG_LEVEL: ["logging", "level"]
+  BATCH_SIZE: ["training", "batch_size"]
+  LEARNING_RATE: ["training", "learning_rate"]
+  ENV_MODE: ["env", "mode"]
+
 # INFRASTRUCTURE LAYER (Single Source of Truth for Paths)
 paths:
   raw_data: "data/raw"
