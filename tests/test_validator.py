@@ -1,6 +1,6 @@
+# tests/test_validator.py
 import pytest
 import pandas as pd
-import numpy as np
 from src.data_processing.validator import DataValidator
 
 # --- Mock Schema for Testing ---
@@ -82,3 +82,5 @@ def test_validator_missing_column(missing_column_df):
         validator.validate(missing_column_df)
     
     assert "Missing columns" in str(excinfo.value)
+
+

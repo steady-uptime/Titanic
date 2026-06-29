@@ -13,17 +13,25 @@ class SklearnRandomForestWorker(ModelWorker):
         
         params = self.config.params
         self.model = RandomForestClassifier(**params)
+        # EXPLICIT STATE: Initialize as False
+        self._is_trained = False 
         logger.info(f"SklearnRandomForestWorker initialized with name: {self.config.name}")
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> None:
         logger.info(f"Starting training for {self.config.name}...")
+        if self.model is None:
+            raise RuntimeError("Model object is not initialized.")
+    
         self.model.fit(X, y)
+        self._is_trained = True
         logger.success("Training complete.")
 
     def predict(self, X: pd.DataFrame) -> pd.Series:
-        """
-        Implementation of the predict contract.
-        """
+        if self.model is None:
+            raise RuntimeError("Model object is not initialized.")
+        
+        if not self._is_trained:
+            raise RuntimeError("Cannot perform inference on an untrained model.")
         logger.info(f"Performing inference for model: {self.config.name}")
         predictions = self.model.predict(X)
         return pd.Series(predictions)
@@ -33,8 +41,9 @@ class SklearnRandomForestWorker(ModelWorker):
         The Worker knows the 'What' (the model object and its name).
         The ArtifactManager knows the 'How' (the filesystem path).
         """
-        if self.model is None:
-            logger.error("Attempted to save a null model.")
+        # CONTRACT VALIDATION: Check the state flag, not the object existence
+        if not self._is_trained:
+            logger.error("Attempted to save an untrained model.")
             raise ValueError("Model must be trained before saving.")
 
         persistence_engine.save_model(

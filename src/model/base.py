@@ -1,20 +1,22 @@
 # src/model/base.py
-from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeVar, Generic, Optional
 from src.config.config_loader import ModelConfig
 from abc import ABC, abstractmethod
 import pandas as pd
-from loguru import logger
 
-class ModelWorker(ABC):
+# Define a TypeVar for the model to allow for better type inference
+T = TypeVar('T')
+
+class ModelWorker(ABC, Generic[T]):
     """
     Abstract Base Class for all model workers.
     Enforces a consistent interface for Training and Inference.
     """
     def __init__(self, config: ModelConfig):
-        # This config is a slice (e.g., model_cfg)
         self.config = config
-        self.model: Any = None
+        # By using T, we tell the IDE that 'model' will be a specific 
+        # type defined by the subclass (e.g., RandomForestClassifier)
+        self.model: Optional[T] = None
 
     @abstractmethod
     def train(self, X: pd.DataFrame, y: pd.Series) -> None:
@@ -26,10 +28,6 @@ class ModelWorker(ABC):
 
     @abstractmethod
     def save(self, persistence_engine: Any) -> None:
-        """
-        Dependency Injection: The worker receives the engine 
-        as a dependency during execution.
-        """
         pass
 
     @abstractmethod

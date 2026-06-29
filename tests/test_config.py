@@ -1,7 +1,6 @@
 # tests/test_config.py
 import yaml
 import pytest
-from pathlib import Path
 from unittest.mock import patch
 from src.config.config_loader import ConfigLoader
 
