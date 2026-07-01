@@ -34,7 +34,8 @@ data/raw/*
 !data/processed/.gitkeep
 !data/raw/.gitkeep
 !data/raw/titanic.csv
-
+# Kubernetes images
+*.tar
 
 # --- Runtime Logs ---
 # Soft Block: Ignore contents of logs, but keep the folder structure

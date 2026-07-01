@@ -1,0 +1,47 @@
+# k8s/job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: titanic-train-job
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        job: titanic-train-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: trainer
+          image: titanic-ml:v1
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "scripts.train"]
+          envFrom:
+            - configMapRef:
+                name: titanic-config
+          volumeMounts:
+            - name: raw-data
+              mountPath: /app/data/raw
+            - name: processed-data
+              mountPath: /app/data/processed
+            - name: model-artifacts
+              mountPath: /app/models/artifacts
+            - name: logs-data
+              mountPath: /app/logs
+      volumes:
+        - name: raw-data
+          hostPath:
+            path: /mnt/raw
+            type: Directory
+        - name: processed-data
+          hostPath:
+            path: /mnt/processed
+            type: Directory
+        - name: model-artifacts
+          hostPath:
+            path: /mnt/models
+            type: Directory
+        - name: logs-data
+          hostPath:
+            path: /mnt/logs
+            type: Directory

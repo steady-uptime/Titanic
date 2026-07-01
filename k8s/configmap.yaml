@@ -1,0 +1,12 @@
+# k8s/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: titanic-config
+data:
+  DATA_PATH: "/app/data/raw"
+  MODEL_PATH: "/app/models/artifacts"
+  LOG_LEVEL: "DEBUG"
+  BATCH_SIZE: "32"
+  LEARNING_RATE: "0.001"
+  ENV_MODE: "dev"
